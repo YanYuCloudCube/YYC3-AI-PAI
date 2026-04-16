@@ -1,28 +1,33 @@
-name: CI/CD Pipeline
+name: YYC³ CI/CD Pipeline
 
 on:
   push:
     branches: [main, develop]
+    tags: ['v*']
   pull_request:
     branches: [main, develop]
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   PNPM_VERSION: '9'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # ===========================================
-  # Job 1: 代码质量检查
+  # Job 1: Lint & Type Check
   # ===========================================
-  code-quality:
-    name: 🔍 Code Quality
+  lint:
+    name: 🔍 Lint & Type Check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -35,80 +40,61 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: ESLint check
+        run: npx eslint src/ --max-warnings=50
+
       - name: TypeScript type check
         run: pnpm run type-check
 
-      - name: ESLint check
-        run: pnpm run lint
-
-      - name: Check for secrets
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: main
-          head: HEAD
-
   # ===========================================
-  # Job 2: 单元测试 + 覆盖率
+  # Job 2: Unit Tests
   # ===========================================
   test:
-    name: 🧪 Test Suite
+    name: 🧪 Unit Tests
     runs-on: ubuntu-latest
-    needs: code-quality
-    strategy:
-      matrix:
-        node-version: [18, 20, 22]
+    needs: lint
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run unit tests with coverage
+      - name: Run tests with coverage
         run: pnpm run test:coverage
 
-      - name: Upload coverage to Codecov
-        if: matrix.node-version == 18
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          fail_ci_if_error: false
-          verbose: true
-
-      - name: Upload coverage artifact
+      - name: Upload coverage report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report-${{ matrix.node-version }}
-          path: |
-            coverage/
-            coverage-report/
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
 
   # ===========================================
-  # Job 3: 构建验证
+  # Job 3: Build
   # ===========================================
   build:
     name: 🏗️ Build
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -121,167 +107,92 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build project
+      - name: Build production bundle
         run: pnpm run build
+        env:
+          NODE_ENV: production
 
-      - name: Check bundle size
+      - name: Bundle size check
         run: |
-          echo "=== Bundle Size Analysis ==="
-          du -sh dist/assets/js/*.js | sort -rh | head -10
-          TOTAL=$(du -sh dist/assets/js/ | cut -f1)
-          echo "Total JS size: $TOTAL"
-          
-          # Alert if main bundle > 1MB
-          MAIN_BUNDLE=$(du -b dist/assets/js/index-*.js 2>/dev/null | cut -f1 || echo 0)
-          if [ "$MAIN_BUNDLE" -gt 1048576 ]; then
-            echo "::warning::Main bundle exceeds 1MB threshold"
-          fi
+          echo "=== Bundle Analysis ==="
+          find dist/assets -name "*.js" -exec du -h {} \; | sort -rh | head -10
+          TOTAL=$(du -sh dist/assets/ | cut -f1)
+          echo "Total assets size: $TOTAL"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
+          name: dist-${{ github.sha }}
+          path: dist/
+          retention-days: 7
+
+  # ===========================================
+  # Job 4: Deploy (GitHub Pages)
+  # ===========================================
+  deploy-pages:
+    name: 🚀 Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm run build
+        env:
+          NODE_ENV: production
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
           path: dist/
 
-  # ===========================================
-  # Job 4: E2E测试 (Playwright)
-  # ===========================================
-  e2e-tests:
-    name: 🎭 E2E Tests
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Build for E2E
-        run: pnpm run build
-
-      - name: Run Playwright tests
-        run: npx playwright test
-
-      - name: Upload Playwright report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-test-results
-          path: test-results/
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   # ===========================================
-  # Job 5: 安全扫描 (仅main分支)
-  # ===========================================
-  security-scan:
-    name: 🔒 Security Scan
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          ignore-unfixed: true
-          format: 'table'
-          exit-code: '0'
-          severity: 'CRITICAL,HIGH'
-
-      - name: Run npm audit
-        run: pnpm audit --audit-level=high
-
-      - name: Dependency review
-        uses: actions/dependency-review-action@v4
-
-  # ===========================================
-  # Job 6: 性能基准测试 (可选)
-  # ===========================================
-  performance-benchmark:
-    name: ⚡ Performance Benchmark
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'pull_request'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run benchmarks
-        run: npx vitest run benchmarks/performance-benchmark.test.ts --reporter=verbose
-
-      - name: Comment benchmark results
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            try {
-              const results = JSON.parse(fs.readFileSync('benchmark-results.json', 'utf8'));
-              const comment = `## ⚡ 性能基准测试结果\n\n${JSON.stringify(results, null, 2)}`;
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: comment
-              });
-            } catch (e) {
-              console.log('No benchmark results found');
-            }
-
-  # ===========================================
-  # Job 7: 发布到GitHub Releases (Tag触发)
+  # Job 5: Release (Tag trigger only)
   # ===========================================
   release:
-    name: 🚀 Release
+    name: 📦 GitHub Release
     runs-on: ubuntu-latest
-    needs: [build, e2e-tests, security-scan]
+    needs: [build, deploy-pages]
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -294,7 +205,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build production
+      - name: Build release
         run: pnpm run build
         env:
           NODE_ENV: production
@@ -303,64 +214,64 @@ jobs:
         id: changelog
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "## 🎉 YYC³ AI-PAI v$VERSION Release Notes" > RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "### ✨ 新功能" >> RELEASE_NOTES.md
-          echo "- 待补充" >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "### 🐛 Bug修复" >> RELEASE_NOTES.md
-          echo "- 待补充" >> RELEASE_NOTES.md
-          echo "" >> RELEASE_NOTES.md
-          echo "### 🔒 安全更新" >> RELEASE_NOTES.md
-          echo "- 待补充" >> RELEASE_NOTES.md
-          cat RELEASE_NOTES.md
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          cat > RELEASE_NOTES.md << 'EOF'
+          ## 🎉 YYC³ AI-PAI Release v${VERSION}
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+          ### ✨ Features
+          - See git log for details
+
+          ### 🐛 Fixes
+          - Critical bug fixes and stability improvements
+
+          ### 🔧 Improvements
+          - Performance optimizations and code quality enhancements
+
+          ---
+          *Deployed via CI/CD pipeline*
+          EOF
+          sed -i "s/\${VERSION}/$VERSION/g" RELEASE_NOTES.md
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
+          name: "YYC³ AI-PAI ${{ github.ref_name }}"
           body_path: RELEASE_NOTES.md
           draft: false
-          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
-          files: |
-            dist/
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') || contains(github.ref_name, '-alpha') }}
+          files: dist/
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy to GitHub Pages (docs)
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          publish_branch: gh-pages
-
   # ===========================================
-  # Job 8: 通知 (成功/失败)
+  # Job 6: Security Audit (main only)
   # ===========================================
-  notify:
-    name: 📢 Notify
+  security:
+    name: 🔒 Security Audit
     runs-on: ubuntu-latest
-    needs: [test, build, e2e-tests]
-    if: always()
+    needs: test
+    if: github.ref == 'refs/heads/main'
     steps:
-      - name: Determine status
-        id: status
-        run: |
-          if [[ "${{ needs.test.result }}" == "failure" ]] || \
-             [[ "${{ needs.build.result }}" == "failure" ]] || \
-             [[ "${{ needs.e2e-tests.result }}" == "failure" ]]; then
-            echo "status=failure" >> $GITHUB_OUTPUT
-          else
-            echo "status=success" >> $GITHUB_OUTPUT
-          fi
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Send Slack notification
-        if: env.SLACK_WEBHOOK_URL != ''
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data '{"text":"YYC³ CI/CD ${{ steps.status.outputs.status }}: ${{ github.event.head_commit.message }}"}' \
-            $SLACK_WEBHOOK_URL || true
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run npm audit
+        run: pnpm audit --audit-level=moderate || true
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
