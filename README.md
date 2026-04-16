@@ -14,14 +14,14 @@
 
 *一人一端 · 数据主权 · 安全归用户*
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?style=flat-square)](https://github.com/yyc3/YYC3-AI-PAI)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?style=flat-square)](https://github.com/YYC-Cube/YYC3-AI-PAI)
 [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6.svg?style=flat-square)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.3%2B-61dafb.svg?style=flat-square)](https://react.dev/)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0%2B-ffc131.svg?style=flat-square)](https://tauri.app/)
 [![Node](https://img.shields.io/badge/Node.js-18%2B-339933.svg?style=flat-square)](https://nodejs.org/)
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/yyc3/YYC3-AI-PAI/ci.yml?branch=main&style=flat-square)](https://github.com/yyc3/YYC3-AI-PAI/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/yyc3/YYC3-AI-PAI/ci.yml?branch=main&style=flat-square)](https://github.com/yyc3-/YYC3-AI-PAI/actions)
 [![Coverage](https://img.shields.io/codecov/c/github/yyc3/YYC3-AI-PAI?style=flat-square)](https://codecov.io/gh/yyc3/YYC3-AI-PAI)
 [![Code Quality](https://img.shields.io/codacy/grade/a1b2c3d4e5f6?style=flat-square)](https://app.codacy.com/gh/yyc3/YYC3-AI-PAI)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](CONTRIBUTING.md)
@@ -432,9 +432,9 @@ pnpm test:e2e
 
 ### 贡献方式
 
-1. **报告问题** - [提交Issue](https://github.com/yyc3/YYC3-AI-PAI/issues)
-2. **功能建议** - [功能讨论](https://github.com/yyc3/YYC3-AI-PAI/discussions)
-3. **代码贡献** - [提交PR](https://github.com/yyc3/YYC3-AI-PAI/pulls)
+1. **报告问题** - [提交Issue](https://github.com/YYC-Cube/YYC3-AI-PAI/issues)
+2. **功能建议** - [功能讨论](https://github.com/YYC-Cube/YYC3-AI-PAI/discussions)
+3. **代码贡献** - [提交PR](https://github.com/YYC-Cube/YYC3-AI-PAI/pulls)
 4. **文档改进** - 完善文档和示例
 
 ### 开发流程
@@ -510,9 +510,9 @@ copies or substantial portions of the Software.
 | 渠道 | 链接 |
 |------|------|
 | 📧 邮箱 | <admin@0379.email> |
-| 🌐 官网 | <https://yyc3.ai> |
-| 💬 GitHub Discussions | [参与讨论](https://github.com/yyc3/YYC3-AI-PAI/discussions) |
-| 🐛 问题反馈 | [提交Issue](https://github.com/yyc3/YYC3-AI-PAI/issues) |
+| 🌐 项目 | <https://ai-pai.yyccube.com> |
+| 💬 GitHub Discussions | [参与讨论](https://github.com/YYC-Cube/YYC3-AI-PAI/discussions) |
+| 🐛 问题反馈 | [提交Issue](https://github.com/YYC-Cube/YYC3-AI-PAI/issues) |
 
 ---
 
