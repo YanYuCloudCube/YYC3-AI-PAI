@@ -312,12 +312,10 @@ export class KeyManager {
       ['deriveKey']
     )
 
-    const saltBuffer = new Uint8Array(salt).buffer as ArrayBuffer
-
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: saltBuffer,
+        salt: salt.slice() as BufferSource,
         iterations: 100000,
         hash: 'SHA-256',
       },
@@ -336,9 +334,8 @@ export class KeyManager {
   ): Promise<string> {
     const key = await this.deriveKey(password, salt)
     const encoder = new TextEncoder()
-    const ivBuffer = new Uint8Array(iv).buffer as ArrayBuffer
     const encryptedBuffer = await crypto.subtle.encrypt(
-      { name: 'AES-GCM', iv: ivBuffer },
+      { name: 'AES-GCM', iv: iv.slice() as BufferSource },
       key,
       encoder.encode(data)
     )
@@ -355,9 +352,8 @@ export class KeyManager {
     )
 
     const key = await this.deriveKey(password, salt)
-    const ivBuffer = new Uint8Array(iv).buffer as ArrayBuffer
     const decryptedBuffer = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv: ivBuffer },
+      { name: 'AES-GCM', iv: iv.slice() as BufferSource },
       key,
       encryptedData
     )
