@@ -333,6 +333,11 @@ export const LivePreview = memo(function LivePreview({
   const isZh = locale === 'zh'
   const { tokens: tk, isCyberpunk } = useThemeStore()
   const preview = usePreviewStore()
+  const {
+    mode: previewMode, delay: previewDelay, autoRefreshInterval,
+    setIsUpdating, setPreviewError, setRenderTime,
+    addConsoleEntry, addHistorySnapshot, scrollSyncEnabled,
+  } = preview
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -364,102 +369,100 @@ export const LivePreview = memo(function LivePreview({
 
   // Handle preview updates based on mode
   useEffect(() => {
-    if (!previewHTML || preview.mode === 'manual') return
+    if (!previewHTML || previewMode === 'manual') return
 
-    if (preview.mode === 'realtime') {
-      preview.setIsUpdating(true)
-      // Small debounce for realtime to avoid excessive reloads
+    if (previewMode === 'realtime') {
+      setIsUpdating(true)
       if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => {
         renderStartRef.current = performance.now()
         setIframeKey(k => k + 1)
-        preview.setIsUpdating(false)
-        preview.setPreviewError(null)
+        setIsUpdating(false)
+        setPreviewError(null)
       }, 150)
-    } else if (preview.mode === 'delayed') {
-      preview.setIsUpdating(true)
+    } else if (previewMode === 'delayed') {
+      setIsUpdating(true)
       if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => {
         renderStartRef.current = performance.now()
         setIframeKey(k => k + 1)
-        preview.setIsUpdating(false)
-        preview.setPreviewError(null)
-      }, preview.delay)
-    } else if (preview.mode === 'smart') {
-      // Smart mode: short debounce for small changes, longer for large
+        setIsUpdating(false)
+        setPreviewError(null)
+      }, previewDelay)
+    } else if (previewMode === 'smart') {
       const delay = code.length < 500 ? 100 : code.length < 2000 ? 300 : 600
-      preview.setIsUpdating(true)
+      setIsUpdating(true)
       if (debounceRef.current) clearTimeout(debounceRef.current)
       debounceRef.current = setTimeout(() => {
         renderStartRef.current = performance.now()
         setIframeKey(k => k + 1)
-        preview.setIsUpdating(false)
-        preview.setPreviewError(null)
+        setIsUpdating(false)
+        setPreviewError(null)
       }, delay)
     }
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [previewHTML, preview.mode, preview.delay])
+  }, [previewHTML, previewMode, previewDelay, code.length, setIsUpdating, setPreviewError])
 
   // Performance timing: measure iframe load time
   const handleIframeLoad = useCallback(() => {
     if (renderStartRef.current > 0) {
       const elapsed = performance.now() - renderStartRef.current
-      preview.setRenderTime(elapsed)
+      setRenderTime(elapsed)
       renderStartRef.current = 0
     }
-  }, [preview])
+  }, [setRenderTime])
 
-  // Auto-refresh interval (对齐 Guidelines: Auto Refresh)
+  // Auto-refresh interval
   useEffect(() => {
     if (autoRefreshRef.current) clearInterval(autoRefreshRef.current)
-    if (preview.autoRefreshInterval > 0) {
+    if (autoRefreshInterval > 0) {
       autoRefreshRef.current = setInterval(() => {
         renderStartRef.current = performance.now()
         setIframeKey(k => k + 1)
-      }, preview.autoRefreshInterval)
+      }, autoRefreshInterval)
     }
     return () => {
       if (autoRefreshRef.current) clearInterval(autoRefreshRef.current)
     }
-  }, [preview.autoRefreshInterval])
+  }, [autoRefreshInterval])
 
   // Manual refresh
   const handleManualRefresh = useCallback(() => {
-    preview.setIsUpdating(true)
-    preview.setPreviewError(null)
+    setIsUpdating(true)
+    setPreviewError(null)
     setIframeKey(k => k + 1)
-    setTimeout(() => preview.setIsUpdating(false), 100)
-  }, [preview])
+    setTimeout(() => setIsUpdating(false), 100)
+  }, [setIsUpdating, setPreviewError])
 
   // Save snapshot
   const handleSaveSnapshot = useCallback(() => {
-    preview.addHistorySnapshot(code, language)
-  }, [preview, code, language])
+    addHistorySnapshot(code, language)
+  }, [addHistorySnapshot, code, language])
 
   // Listen for console messages & errors from iframe
   useEffect(() => {
     const handler = (e: MessageEvent) => {
       if (!e.data) return
       if (e.data.type === 'yyc3-console') {
-        preview.addConsoleEntry(e.data.logType, e.data.message)
+        addConsoleEntry(e.data.logType, e.data.message)
       } else if (e.data.type === 'yyc3-error') {
-        preview.setPreviewError({
+        setPreviewError({
           message: e.data.message,
           line: e.data.line,
           column: e.data.column,
           stack: e.data.stack,
         })
-        preview.addConsoleEntry('error', e.data.message)
-      } else if (e.data.type === 'yyc3-scroll' && preview.scrollSyncEnabled) {
+        addConsoleEntry('error', e.data.message)
+      } else if (e.data.type === 'yyc3-scroll' && scrollSyncEnabled) {
         onScrollSync?.(e.data.ratio)
       }
     }
     window.addEventListener('message', handler)
     return () => window.removeEventListener('message', handler)
-  }, [preview.scrollSyncEnabled, onScrollSync])
+  }, [scrollSyncEnabled, addConsoleEntry, setPreviewError, onScrollSync])
 
   // Get device dimensions
   const device = DEVICE_PRESETS.find(d => d.id === preview.deviceId) || DEVICE_PRESETS[0]

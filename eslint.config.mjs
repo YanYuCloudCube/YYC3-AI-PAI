@@ -31,7 +31,31 @@ export default tseslint.config(
   {
     plugins: { "react-refresh": reactRefresh },
     rules: {
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true, allowExportNames: ["useI18n"] }],
+      "react-refresh/only-export-components": ["warn", {
+        allowConstantExport: true,
+        allowExportNames: [
+          "useI18n",
+          "cyberToast",
+          "PerformanceMonitorProps",
+          "withPerformanceTracking",
+          "createPerformanceMonitoredComponent",
+          "filterFileTree",
+          "IDELayoutContextValue",
+          "IDELayoutProvider",
+          "useIDELayout",
+          "badgeVariants",
+          "buttonVariants",
+          "toggleVariants",
+          "navigationMenuTriggerStyle",
+          "useFormField",
+          "useSidebar",
+          "AIModel",
+          "ConnectivityStatus",
+          "ModelTestResult",
+          "ModelStoreProvider",
+          "useModelStore",
+        ],
+      }],
     },
   },
 

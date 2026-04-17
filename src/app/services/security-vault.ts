@@ -60,6 +60,7 @@ export class SecurityVault {
   private auditLog: VaultAuditLog[] = []
   private readonly VAULT_KEY = 'yyc3-vault-key'
   private readonly VAULT_SALT = 'yyc3-vault-salt'
+  private readonly VAULT_IV = 'yyc3-vault-iv'
   private readonly MAX_FAILED_ATTEMPTS = 5
   private readonly LOCKOUT_DURATION = 300000 // 5 minutes
 
@@ -103,6 +104,7 @@ export class SecurityVault {
 
     localStorage.setItem(this.VAULT_KEY, this.arrayBufferToBase64(encrypted.ciphertext))
     localStorage.setItem(this.VAULT_SALT, this.arrayBufferToBase64(salt.buffer as ArrayBuffer))
+    localStorage.setItem(this.VAULT_IV, this.arrayBufferToBase64(encrypted.iv.buffer as ArrayBuffer))
 
     this.status.isInitialized = true
     this.status.isLocked = false
@@ -134,10 +136,15 @@ export class SecurityVault {
       const testDataBase64 = localStorage.getItem(this.VAULT_KEY)
       if (!testDataBase64) throw new Error('Vault key not found')
 
+      const ivBase64 = localStorage.getItem(this.VAULT_IV)
+      const iv = ivBase64
+        ? new Uint8Array(this.base64ToArrayBuffer(ivBase64))
+        : new Uint8Array(this.config.ivLength)
+
       const testData = this.base64ToArrayBuffer(testDataBase64)
       const decrypted = await this.decryptWithKey(key, {
         ciphertext: testData,
-        iv: new Uint8Array(this.config.ivLength),
+        iv,
         salt: new Uint8Array(salt),
         version: 1,
         algorithm: this.config.algorithm,
@@ -232,6 +239,7 @@ export class SecurityVault {
 
       localStorage.setItem(this.VAULT_KEY, this.arrayBufferToBase64(encrypted.ciphertext))
       localStorage.setItem(this.VAULT_SALT, this.arrayBufferToBase64(newSalt.buffer as ArrayBuffer))
+      localStorage.setItem(this.VAULT_IV, this.arrayBufferToBase64(encrypted.iv.buffer as ArrayBuffer))
 
       this.masterKey = newKey
       this.logAction('change-passphrase', true)
@@ -305,6 +313,7 @@ export class SecurityVault {
   destroy(): void {
     localStorage.removeItem(this.VAULT_KEY)
     localStorage.removeItem(this.VAULT_SALT)
+    localStorage.removeItem(this.VAULT_IV)
     this.masterKey = null
     this.status = {
       isLocked: true,

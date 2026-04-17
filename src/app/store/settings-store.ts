@@ -540,11 +540,12 @@ export const settingsActions = {
 
     // Ollama (local) — no API key needed, just check if server is reachable
     if (provider === 'ollama') {
+      const ollamaUrl = import.meta.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434'
       try {
-        const resp = await fetch('http://localhost:11434/api/tags', { signal: AbortSignal.timeout(3000) })
+        const resp = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(3000) })
         return { valid: resp.ok, latencyMs: Date.now() - start, error: resp.ok ? undefined : 'Ollama server not responding' }
       } catch {
-        return { valid: false, error: 'Cannot reach Ollama at localhost:11434', latencyMs: Date.now() - start }
+        return { valid: false, error: `Cannot reach Ollama at ${ollamaUrl}`, latencyMs: Date.now() - start }
       }
     }
 

@@ -110,7 +110,7 @@ export function IntelligentWorkflowPanel({ visible, onClose }: IntelligentWorkfl
   }
 
   const getNodeIcon = (type: WorkflowNodeType) => {
-    const icons: Record<WorkflowNodeType, any> = {
+    const icons: Record<WorkflowNodeType, React.ElementType> = {
       task: Terminal,
       condition: GitBranch,
       loop: RotateCcw,

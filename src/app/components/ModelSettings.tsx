@@ -92,7 +92,7 @@ const PROVIDERS: ProviderDef[] = [
 const DEFAULT_MCP_SERVERS: MCPServerConfig[] = [
   { id: "mcp-filesystem", name: "Filesystem", description: "\u6587\u4EF6\u7CFB\u7EDF\u8BFB\u5199", command: "npx", args: ["-y", "@modelcontextprotocol/server-filesystem", "/app/designs"], env: {}, enabled: true },
   { id: "mcp-fetch", name: "Fetch", description: "HTTP \u8BF7\u6C42\u5DE5\u5177", command: "npx", args: ["-y", "@modelcontextprotocol/server-fetch"], env: {}, enabled: true },
-  { id: "mcp-postgres", name: "PostgreSQL", description: "\u6570\u636E\u5E93\u67E5\u8BE2", command: "npx", args: ["-y", "@modelcontextprotocol/server-postgres"], env: { DATABASE_URL: "postgresql://user:pwd@localhost:5432/yanyucloud" }, enabled: false },
+  { id: "mcp-postgres", name: "PostgreSQL", description: "\u6570\u636E\u5E93\u67E5\u8BE2", command: "npx", args: ["-y", "@modelcontextprotocol/server-postgres"], env: { DATABASE_URL: "postgresql://user:password@localhost:5432/mydb" }, enabled: false },
 ];
 
 // ===== Storage =====
@@ -859,7 +859,7 @@ export function ModelSettings() {
   const [diagnostics, setDiagnostics] = useState<Record<string, DiagnosticResult>>({});
   const pendingRef = useRef<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [ollamaHost, setOllamaHost] = useState("http://localhost:11434");
+  const [ollamaHost, setOllamaHost] = useState(import.meta.env.VITE_OLLAMA_BASE_URL || "http://localhost:11434");
   const [ollamaScanning, setOllamaScanning] = useState(false);
   const [ollamaModels, setOllamaModels] = useState<OllamaDetectedModel[]>([]);
   const [ollamaConnected, setOllamaConnected] = useState(false);

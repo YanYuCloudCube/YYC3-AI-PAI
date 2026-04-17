@@ -157,8 +157,17 @@ class WebFileSystemAdapter implements FileSystemAdapter {
     if (!this.rootHandle) throw new Error('No root directory handle')
 
     try {
-      await this.getFileHandle(path)
-      await this.rootHandle.removeEntry(this.getBaseName(path))
+      const baseName = this.getBaseName(path)
+      const parentPath = this.getDirectoryName(path)
+      const parentHandle = parentPath
+        ? await this.getDirectoryHandle(parentPath)
+        : this.rootHandle
+
+      try {
+        await parentHandle.removeEntry(baseName, { recursive: true })
+      } catch {
+        await this.rootHandle.removeEntry(baseName, { recursive: true })
+      }
     } catch (error) {
       logger.error(`Failed to delete file: ${path}`, error as Error)
       throw error
@@ -166,9 +175,19 @@ class WebFileSystemAdapter implements FileSystemAdapter {
   }
 
   async renameFile(oldPath: string, newPath: string): Promise<void> {
-    const data = await this.readFile(oldPath)
-    await this.writeFile(newPath, data)
-    await this.deleteFile(oldPath)
+    let dataWritten = false
+    try {
+      const data = await this.readFile(oldPath)
+      await this.writeFile(newPath, data)
+      dataWritten = true
+      await this.deleteFile(oldPath)
+    } catch (error) {
+      if (dataWritten) {
+        try { await this.deleteFile(newPath) } catch { /* rollback best-effort */ }
+      }
+      logger.error(`Failed to rename file: ${oldPath} -> ${newPath}`, error as Error)
+      throw error
+    }
   }
 
   async copyFile(src: string, dest: string): Promise<void> {

@@ -469,7 +469,7 @@ export const CyberEditor = forwardRef<CyberEditorHandle, CyberEditorProps>(funct
     const newDecorations = buildCollabDecorations(remoteUsers, editor, monaco)
     // 使用节流更新，避免频繁重绘
     throttleRef.update(editor, newDecorations)
-  }, [remoteUsers, editorReady, collab.operations, throttleRef.update])
+  }, [remoteUsers, editorReady, collab.operations, throttleRef])
 
   // Initialize collab simulation
   useEffect(() => {

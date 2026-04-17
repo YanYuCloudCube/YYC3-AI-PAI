@@ -85,7 +85,7 @@ function PerformanceTrendChart({ history }: { history: Array<{ timestamp: Date; 
 /**
  * Monaco性能监控面板
  */
-export function MonacoPerformanceMonitor({ editorRef }: { editorRef: React.RefObject<any> }) {
+export function MonacoPerformanceMonitor({ editorRef }: { editorRef: React.RefObject<unknown> }) {
   const { state, toggle, runBenchmark } = useMonacoPerformanceMonitor({ autoShow: false })
   const { history, stats, addRecord, clearHistory, getTrend } = usePerformanceData()
 

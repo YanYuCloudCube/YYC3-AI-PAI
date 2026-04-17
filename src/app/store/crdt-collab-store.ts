@@ -21,6 +21,16 @@ import { createLogger } from '../utils/logger'
 
 const logger = createLogger('crdt')
 
+const COLLAB_CONFIG = {
+  get wsUrl() { return import.meta.env.VITE_COLLAB_WS_URL || 'ws://localhost:8080' },
+  get signalingUrls() {
+    const envVal = import.meta.env.VITE_COLLAB_SIGNALING_URL
+    return envVal ? [envVal] : ['wss://signaling.yyc3.io']
+  },
+  maxConnsBase: 20,
+  maxConnsRandom: 10,
+} as const
+
 /**
  * 协作连接类型
  */
@@ -341,8 +351,13 @@ export const useCRDTCollabStore = create<CollabState & CollabStoreActions>()(
         }
       })
 
-      // 广播光标位置（需要实际实现）
-      // 这里应该是通过provider广播光标位置
+      const cursorData = { file, line, column }
+      const doc = get().documents.get(file)
+      if (doc?.wsProvider) {
+        doc.wsProvider.awareness.setLocalStateField('cursor', cursorData)
+      } else if (doc?.rtcProvider) {
+        doc.rtcProvider.awareness.setLocalStateField('cursor', cursorData)
+      }
     },
 
     // 获取文档内容
@@ -407,7 +422,7 @@ export const useCRDTCollabStore = create<CollabState & CollabStoreActions>()(
       // 为每个文档创建WebSocket Provider
       for (const [docId, doc] of state.documents) {
         const wsProvider = new WebsocketProvider(
-          'ws://localhost:1234', // WebSocket服务器地址
+          COLLAB_CONFIG.wsUrl,
           docId,
           doc.doc,
           { connect: true }
@@ -457,10 +472,10 @@ export const useCRDTCollabStore = create<CollabState & CollabStoreActions>()(
       // 为每个文档创建WebRTC Provider
       for (const [docId, doc] of state.documents) {
         const rtcProvider = new WebrtcProvider(docId, doc.doc, {
-          signaling: ['wss://signaling.yyc3.io'], // 信令服务器地址
-          maxConns: 20 + Math.floor(Math.random() * 10), // 最大连接数
-          filterBcConns: true, // 过滤桥接连接
-          peerOpts: {}, // WebRTC配置
+          signaling: COLLAB_CONFIG.signalingUrls,
+          maxConns: COLLAB_CONFIG.maxConnsBase + Math.floor(Math.random() * COLLAB_CONFIG.maxConnsRandom),
+          filterBcConns: true,
+          peerOpts: {},
         })
 
         rtcProvider.on('peers', (arg: { added: string[]; removed: string[]; webrtcPeers: string[]; bcPeers: string[] }) => {

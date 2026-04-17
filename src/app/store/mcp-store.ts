@@ -190,7 +190,7 @@ const PRESET_SERVERS: MCPServerConfig[] = [
     transport: 'stdio',
     command: 'npx',
     args: ['-y', '@modelcontextprotocol/server-postgres'],
-    env: { DATABASE_URL: 'postgresql://user:pwd@localhost:5432/yanyucloud' },
+    env: { DATABASE_URL: 'postgresql://user:password@localhost:5432/mydb' },
     enabled: false,
     status: 'unknown',
     tools: [

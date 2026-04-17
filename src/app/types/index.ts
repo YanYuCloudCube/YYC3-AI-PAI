@@ -106,7 +106,7 @@ export function getEnvConfig(): EnvConfig {
     isProd: env === 'production',
     isTest: env === 'test',
     apiBaseUrl: import.meta.env.VITE_API_BASE_URL || '/api',
-    wsUrl: import.meta.env.VITE_WS_URL || 'ws://localhost:8080',
+    wsUrl: import.meta.env.VITE_WS_URL || import.meta.env.VITE_COLLAB_WS_URL || 'ws://localhost:8080',
     debug: import.meta.env.VITE_DEBUG === 'true'
   }
 }

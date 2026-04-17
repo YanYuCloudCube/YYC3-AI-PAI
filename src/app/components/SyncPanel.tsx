@@ -64,7 +64,7 @@ export function SyncPanel({ isOpen, onClose }: SyncPanelProps) {
     try {
       await startSync()
       cyberToast(isZh ? '✅ 同步完成' : '✅ Sync completed')
-    } catch (error) {
+    } catch {
       cyberToast(isZh ? '❌ 同步失败' : '❌ Sync failed')
     }
   }, [startSync, isZh])

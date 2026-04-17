@@ -1,7 +1,8 @@
 {
-  "name": "@figma/my-make-file",
+  "name": "@yyc3/ai-pai",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "YYC³ AI-PAI — 下一代AI驱动的智能编程助手，一人一端·数据主权·安全归用户",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3100 --host",

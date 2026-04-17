@@ -269,7 +269,20 @@ class SyncEngine {
     return 'completed'
   }
 
-  private async detectConflict(_item: SyncItem): Promise<boolean> {
+  private async detectConflict(item: SyncItem): Promise<boolean> {
+    if (item.type === 'create') return false
+
+    if (item.remoteVersion !== undefined && item.localVersion !== item.remoteVersion) {
+      logger.warn(`Version mismatch for ${item.path}: local=${item.localVersion}, remote=${item.remoteVersion}`)
+      return true
+    }
+
+    const existingConflict = this.state.conflicts.get(item.path)
+    if (existingConflict && !existingConflict.resolution) {
+      logger.warn(`Unresolved conflict exists for ${item.path}`)
+      return true
+    }
+
     return false
   }
 

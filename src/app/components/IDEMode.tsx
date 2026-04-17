@@ -165,11 +165,11 @@ export function IDEMode({ onSwitchMode, onOpenSettings, onOpenNotifications, onO
     recentActions: ["file:select", "code:view", "terminal:execute"],
   }), [selectedFile, editorCode, activeDesignJson]);
 
-  // ── Icon map for dynamic slot headers ──
-  const SLOT_ICON_MAP: Record<PanelContentType, React.ElementType> = {
+d  // ── Icon map for dynamic slot headers ──
+  const SLOT_ICON_MAP = useMemo<Record<PanelContentType, React.ElementType>>(() => ({
     'ai-chat': MessageSquare, 'file-explorer': FolderOpen, 'code-editor': Code2,
     'preview': Eye, 'terminal': TerminalIcon,
-  };
+  }), []);
 
   // ===== Effects =====
 
@@ -262,7 +262,7 @@ export function IDEMode({ onSwitchMode, onOpenSettings, onOpenNotifications, onO
     const cfg = PANEL_CONTENT_MAP[contentType];
     const IconComp = SLOT_ICON_MAP[contentType];
     return (<><IconComp size={13} color={tokens.primary} /><span style={{ fontFamily: tokens.fontMono, fontSize: "10px", color: tokens.primary, letterSpacing: "1px" }}>{t("ide", cfg.labelKey)}</span></>);
-  }, [tokens, t]);
+  }, [tokens, t, SLOT_ICON_MAP]);
 
   const renderSlotHeaderExtra = useCallback((contentType: PanelContentType) => {
     if (contentType === 'ai-chat') return (

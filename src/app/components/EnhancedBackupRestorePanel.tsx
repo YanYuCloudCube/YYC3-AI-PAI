@@ -8,7 +8,7 @@
  * @license MIT
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   Download, RotateCcw, Trash2, Loader2,
   CheckCircle, XCircle, AlertTriangle,
@@ -47,12 +47,12 @@ export function EnhancedBackupRestorePanel({ tk, isZh }: EnhancedBackupRestorePa
 
   const activeProfile = profiles.find(p => p.id === activeConnId)
 
-  const backupOptions: BackupOptions = {
+  const backupOptions: BackupOptions = useMemo(() => ({
     includeSchema: true,
     includeData: true,
-    format: 'sql',
+    format: 'sql' as const,
     compress: true,
-  }
+  }), [])
 
   const handleBackup = useCallback(async () => {
     if (!activeConnId) return
@@ -98,10 +98,10 @@ export function EnhancedBackupRestorePanel({ tk, isZh }: EnhancedBackupRestorePa
       const preview = await service.getRestorePreview(activeConnId, backupId, backup.filename, backup.sizeBytes)
       setPreviewData(preview)
       setShowPreview(backupId)
-    } catch (error) {
+    } catch {
       cyberToast(isZh ? `❌ 获取恢复预览失败` : `❌ Failed to get restore preview`)
     }
-  }, [activeConnId, backups])
+  }, [activeConnId, backups, isZh])
 
   const handleRestore = useCallback(async (backupId: string) => {
     if (!activeConnId || !previewData) return
