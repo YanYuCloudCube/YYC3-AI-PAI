@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: ESLint check
-        run: npx eslint src/ --max-warnings=50
+        run: npx eslint src/ --max-warnings=0
 
       - name: TypeScript type check
         run: pnpm run type-check

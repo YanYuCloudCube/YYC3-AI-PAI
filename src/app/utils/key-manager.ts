@@ -415,8 +415,7 @@ export class KeyManager {
     const salt = this.generateSalt()
     const iv = this.generateIV()
     const key = await this.deriveKey(password, salt)
-    const ivBuffer = new Uint8Array(iv).buffer as ArrayBuffer
-    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: ivBuffer }, key, data)
+    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv.slice() as BufferSource }, key, data)
 
     const result = {
       salt: Array.from(salt).join(','),
@@ -437,8 +436,7 @@ export class KeyManager {
       const dataArray = new Uint8Array(data.match(/.{1,2}/g)!.map((byte: string) => parseInt(byte, 16)))
 
       const key = await this.deriveKey(password, saltArray)
-      const ivBuffer = new Uint8Array(ivArray).buffer as ArrayBuffer
-      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivBuffer }, key, dataArray.buffer as ArrayBuffer)
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: ivArray.slice() as BufferSource }, key, dataArray.buffer as ArrayBuffer)
 
       const decoder = new TextDecoder()
       const exportData = JSON.parse(decoder.decode(decrypted))
