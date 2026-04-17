@@ -340,7 +340,7 @@ export class SecurityVault {
     return crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt: salt as unknown as BufferSource,
+        salt: (salt as Uint8Array).slice() as unknown as BufferSource,
         iterations: this.config.keyDerivationIterations,
         hash: 'SHA-256',
       },
@@ -361,7 +361,7 @@ export class SecurityVault {
     const encrypted = await crypto.subtle.encrypt(
       {
         name: this.config.algorithm,
-        iv: iv as unknown as BufferSource,
+        iv: iv.slice() as unknown as BufferSource,
         tagLength: this.config.tagLength,
       },
       key,
@@ -381,7 +381,7 @@ export class SecurityVault {
     return crypto.subtle.decrypt(
       {
         name: this.config.algorithm,
-        iv: encrypted.iv as unknown as BufferSource,
+        iv: (encrypted.iv as Uint8Array).slice() as unknown as BufferSource,
         tagLength: this.config.tagLength,
       },
       key,
