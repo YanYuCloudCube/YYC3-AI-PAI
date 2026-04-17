@@ -100,11 +100,11 @@ export class SecurityVault {
     const key = await this.deriveKey(passphrase, salt)
 
     const testData = new TextEncoder().encode('vault-test')
-    const encrypted = await this.encryptWithKey(key, testData.buffer as ArrayBuffer)
+    const encrypted = await this.encryptWithKey(key, testData.slice().buffer as ArrayBuffer)
 
     localStorage.setItem(this.VAULT_KEY, this.arrayBufferToBase64(encrypted.ciphertext))
-    localStorage.setItem(this.VAULT_SALT, this.arrayBufferToBase64(salt.buffer as ArrayBuffer))
-    localStorage.setItem(this.VAULT_IV, this.arrayBufferToBase64(encrypted.iv.buffer as ArrayBuffer))
+    localStorage.setItem(this.VAULT_SALT, this.arrayBufferToBase64(salt.slice().buffer as ArrayBuffer))
+    localStorage.setItem(this.VAULT_IV, this.arrayBufferToBase64(encrypted.iv.slice().buffer as ArrayBuffer))
 
     this.status.isInitialized = true
     this.status.isLocked = false
@@ -151,7 +151,7 @@ export class SecurityVault {
       })
 
       const expected = new TextEncoder().encode('vault-test')
-      if (!this.arrayBuffersEqual(decrypted, expected.buffer as ArrayBuffer)) {
+      if (!this.arrayBuffersEqual(decrypted, expected.slice().buffer as ArrayBuffer)) {
         throw new Error('Invalid passphrase')
       }
 
@@ -235,11 +235,11 @@ export class SecurityVault {
       const newKey = await this.deriveKey(newPassphrase, newSalt)
 
       const testData = new TextEncoder().encode('vault-test')
-      const encrypted = await this.encryptWithKey(newKey, testData.buffer as ArrayBuffer)
+      const encrypted = await this.encryptWithKey(newKey, testData.slice().buffer as ArrayBuffer)
 
       localStorage.setItem(this.VAULT_KEY, this.arrayBufferToBase64(encrypted.ciphertext))
-      localStorage.setItem(this.VAULT_SALT, this.arrayBufferToBase64(newSalt.buffer as ArrayBuffer))
-      localStorage.setItem(this.VAULT_IV, this.arrayBufferToBase64(encrypted.iv.buffer as ArrayBuffer))
+      localStorage.setItem(this.VAULT_SALT, this.arrayBufferToBase64(newSalt.slice().buffer as ArrayBuffer))
+      localStorage.setItem(this.VAULT_IV, this.arrayBufferToBase64(encrypted.iv.slice().buffer as ArrayBuffer))
 
       this.masterKey = newKey
       this.logAction('change-passphrase', true)

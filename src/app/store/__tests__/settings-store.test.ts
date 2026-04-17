@@ -1,5 +1,5 @@
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { settingsActions } from '../settings-store'
 import type { AgentConfig } from '../settings-store'
 
@@ -281,12 +281,22 @@ describe('settings-store', () => {
       expect(result.valid).toBe(false)
     })
     it('should always pass Ollama keys', async () => {
-      const result = await settingsActions.validateModelApiKey('ollama', 'any-local-key')
-      expect(result.valid).toBe(true)
+      const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ models: [] }), { status: 200 }))
+      try {
+        const result = await settingsActions.validateModelApiKey('ollama', 'any-local-key')
+        expect(result.valid).toBe(true)
+      } finally {
+        mockFetch.mockRestore()
+      }
     })
     it('should return latencyMs', async () => {
-      const result = await settingsActions.validateModelApiKey('ollama', 'test')
-      expect(result.latencyMs).toBeGreaterThanOrEqual(0)
+      const mockFetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ models: [] }), { status: 200 }))
+      try {
+        const result = await settingsActions.validateModelApiKey('ollama', 'test')
+        expect(result.latencyMs).toBeGreaterThanOrEqual(0)
+      } finally {
+        mockFetch.mockRestore()
+      }
     })
   })
 
