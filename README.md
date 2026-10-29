@@ -1,5 +1,7 @@
 # YYC³ AI-PAI
 
+> ⚠️ **归档声明（2026-10-29）**：本仓为过时镜像，开发与发布源已迁移至 [YYC-Cube/YYC3-AI-PAI](https://github.com/YYC-Cube/YYC3-AI-PAI)。npm 规划发布名 `@yyc3/ai-pai`（尚未发布，发布时以真身仓为准）。
+
 > ***YanYuCloudCube***
 > *言启象限 | 语枢未来*
 > ***Words Initiate Quadrants, Language Serves as Core for Future***
